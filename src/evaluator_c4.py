@@ -22,7 +22,7 @@ def save_as_pickle(filename, data):
                                 filename)
     with open(completeName, 'wb') as output:
         pickle.dump(data, output)
-        
+
 def load_pickle(filename):
     completeName = os.path.join("./evaluator_data/",\
                                 filename)
@@ -34,7 +34,7 @@ class arena():
     def __init__(self, current_cnet, best_cnet):
         self.current = current_cnet
         self.best = best_cnet
-    
+
     def play_round(self):
         logger.info("Starting game round...")
         if np.random.uniform(0,1) <= 0.5:
@@ -55,7 +55,7 @@ class arena():
                 root = UCT_search(current_board,777,black,t)
                 policy = get_policy(root, t); print("Policy: ", policy, "black = %s" %(str(b)))
             current_board = do_decode_n_move_pieces(current_board,\
-                                                    np.random.choice(np.array([0,1,2,3,4,5,6]), \
+                                                    np.random.choice(np.array([0,1,2,3,4,5,6,7,8]), \
                                                                      p = policy)) # decode move and move piece(s)
             if current_board.check_winner() == True: # someone wins
                 if current_board.player == 0: # black wins
@@ -73,7 +73,7 @@ class arena():
         else:
             dataset.append("Nobody wins")
             return None, dataset
-    
+
     def evaluate(self, num_games, cpu):
         current_wins = 0
         logger.info("[CPU %d]: Starting games..." % cpu)
@@ -88,7 +88,7 @@ class arena():
         save_as_pickle("wins_cpu_%i" % (cpu),\
                                              {"best_win_ratio": current_wins/num_games, "num_games":num_games})
         logger.info("[CPU %d]: Finished arena games!" % cpu)
-        
+
 def fork_process(arena_obj, num_games, cpu): # make arena picklable
     arena_obj.evaluate(num_games, cpu)
 
@@ -99,31 +99,31 @@ def evaluate_nets(args, iteration_1, iteration_2) :
                                     current_net)
     best_net_filename = os.path.join("./model_data/",\
                                     best_net)
-    
+
     logger.info("Current net: %s" % current_net)
     logger.info("Previous (Best) net: %s" % best_net)
-    
+
     current_cnet = ConnectNet()
     best_cnet = ConnectNet()
     cuda = torch.cuda.is_available()
     if cuda:
         current_cnet.cuda()
         best_cnet.cuda()
-    
+
     if not os.path.isdir("./evaluator_data/"):
         os.mkdir("evaluator_data")
-    
+
     if args.MCTS_num_processes > 1:
         mp.set_start_method("spawn",force=True)
-        
+
         current_cnet.share_memory(); best_cnet.share_memory()
         current_cnet.eval(); best_cnet.eval()
-        
+
         checkpoint = torch.load(current_net_filename)
         current_cnet.load_state_dict(checkpoint['state_dict'])
         checkpoint = torch.load(best_net_filename)
         best_cnet.load_state_dict(checkpoint['state_dict'])
-         
+
         processes = []
         if args.MCTS_num_processes > mp.cpu_count():
             num_processes = mp.cpu_count()
@@ -138,7 +138,7 @@ def evaluate_nets(args, iteration_1, iteration_2) :
                 processes.append(p)
             for p in processes:
                 p.join()
-               
+
         wins_ratio = 0.0
         for i in range(num_processes):
             stats = load_pickle("wins_cpu_%i" % (i))
@@ -148,7 +148,7 @@ def evaluate_nets(args, iteration_1, iteration_2) :
             return iteration_2
         else:
             return iteration_1
-            
+
     elif args.MCTS_num_processes == 1:
         current_cnet.eval(); best_cnet.eval()
         checkpoint = torch.load(current_net_filename)
@@ -157,7 +157,7 @@ def evaluate_nets(args, iteration_1, iteration_2) :
         best_cnet.load_state_dict(checkpoint['state_dict'])
         arena1 = arena(current_cnet=current_cnet, best_cnet=best_cnet)
         arena1.evaluate(num_games=args.num_evaluator_games, cpu=0)
-        
+
         stats = load_pickle("wins_cpu_%i" % (0))
         if stats.best_win_ratio >= 0.55:
             return iteration_2
