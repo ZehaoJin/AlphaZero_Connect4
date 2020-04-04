@@ -56,7 +56,7 @@ class board():
                         try:
                             if self.current_board[row, col] == "O" and self.current_board[row + 1, col - 1] == "O" and \
                                 self.current_board[row + 2, col - 2] == "O" \
-                                and (col-2 >= 0:
+                                and (col-2) >= 0:
                                 #print("/")
                                 return True
                         except IndexError:
