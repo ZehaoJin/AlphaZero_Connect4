@@ -63,7 +63,7 @@ class OutBlock(nn.Module):
         self.conv1 = nn.Conv2d(128, 32, kernel_size=1) # policy head
         self.bn1 = nn.BatchNorm2d(32)
         self.logsoftmax = nn.LogSoftmax(dim=1)
-        self.fc = nn.Linear(3*3*32, 7)
+        self.fc = nn.Linear(3*3*32, 9)
 
     def forward(self,s):
         v = F.relu(self.bn(self.conv(s))) # value head
